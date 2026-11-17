@@ -41,3 +41,27 @@ if __name__ == "__main__":
     print("Staff Name:", r1.staff_name)
     print("Total: $" + str(total))
     print("Status:", r1.status)
+
+    def approve_requisition(self):
+        """Set status automatically based on the total.
+        Under $500 is Approved, $500 or more stays Pending."""
+        if self.total < 500:
+            self.status = "Approved"
+            self.approval_ref = "FN" + self.staff_id[2:] + str(self.requisition_id)[-3:]
+        else:
+            self.status = "Pending"
+        return self.status
+
+    def respond_to_requisition(self, decision):
+        """Manager sets the status to 'Approved' or 'Not approved'.
+        Only works on requisitions that are still Pending."""
+        if self.status != "Pending":
+            return False
+        if decision == "Approved":
+            self.status = "Approved"
+            self.approval_ref = "FN" + self.staff_id[2:] + str(self.requisition_id)[-3:]
+        elif decision == "Not approved":
+            self.status = "Not approved"
+        else:
+            return False
+        return True
