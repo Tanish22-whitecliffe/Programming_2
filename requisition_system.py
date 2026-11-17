@@ -32,22 +32,16 @@ class Requisition:
         self.total = sum(cost for _, cost in items)
         return self.total
 
-
-# Simple test - runs only when this file is run directly
-if __name__ == "__main__":
-    r1 = Requisition("03/04/2024", "FN19", "John Paul")
-    total = r1.add_requisition([("Pens", 50), ("Paper", 400)])
-    print("Requisition ID:", r1.requisition_id)
-    print("Staff Name:", r1.staff_name)
-    print("Total: $" + str(total))
-    print("Status:", r1.status)
+    def make_approval_ref(self):
+        """Build a reference like FN19001 from staff ID and requisition ID."""
+        return "FN" + self.staff_id[2:] + str(self.requisition_id)[-3:]
 
     def approve_requisition(self):
         """Set status automatically based on the total.
         Under $500 is Approved, $500 or more stays Pending."""
         if self.total < 500:
             self.status = "Approved"
-            self.approval_ref = "FN" + self.staff_id[2:] + str(self.requisition_id)[-3:]
+            self.approval_ref = self.make_approval_ref()
         else:
             self.status = "Pending"
         return self.status
@@ -59,9 +53,77 @@ if __name__ == "__main__":
             return False
         if decision == "Approved":
             self.status = "Approved"
-            self.approval_ref = "FN" + self.staff_id[2:] + str(self.requisition_id)[-3:]
+            self.approval_ref = self.make_approval_ref()
         elif decision == "Not approved":
             self.status = "Not approved"
         else:
             return False
         return True
+
+    @staticmethod
+    def display_requisitions():
+        """Print the details of every requisition."""
+        for r in all_requisitions:
+            print("Date:", r.date)
+            print("Requisition ID:", r.requisition_id)
+            print("Staff ID:", r.staff_id)
+            print("Staff Name:", r.staff_name)
+            print("Total: $" + str(r.total))
+            print("Status:", r.status)
+            print("Approval Reference Number:", r.approval_ref)
+            print()
+
+    @staticmethod
+    def requisition_statistics():
+        """Count requisitions by status, print them and return them."""
+        stats = {
+            "submitted": len(all_requisitions),
+            "approved": sum(1 for r in all_requisitions if r.status == "Approved"),
+            "pending": sum(1 for r in all_requisitions if r.status == "Pending"),
+            "not_approved": sum(1 for r in all_requisitions if r.status == "Not approved"),
+        }
+        print("Total submitted:", stats["submitted"])
+        print("Total approved:", stats["approved"])
+        print("Total pending:", stats["pending"])
+        print("Total not approved:", stats["not_approved"])
+        return stats
+
+
+# Test scenarios - runs only when this file is run directly
+if __name__ == "__main__":
+    # 1. Under $500, approved automatically
+    r1 = Requisition("03/04/2024", "FN19", "John Paul")
+    r1.add_requisition([("Pens", 50), ("Paper", 400)])
+    r1.approve_requisition()
+
+    # 2. $500 or more, left pending
+    r2 = Requisition("05/04/2024", "FN20", "Tracy Brown")
+    r2.add_requisition([("Laptop", 1000)])
+    r2.approve_requisition()
+
+    # 3. $500 or more, manager says Not approved
+    r3 = Requisition("07/05/2024", "FN15", "Emma Wellington")
+    r3.add_requisition([("Desk", 3500)])
+    r3.approve_requisition()
+    r3.respond_to_requisition("Not approved")
+
+    # 4. Under $500, approved automatically
+    r4 = Requisition("03/05/2024", "FN02", "Catlin White")
+    r4.add_requisition([("Printer ink", 490)])
+    r4.approve_requisition()
+
+    # 5. Exactly $500 (boundary case), left pending
+    r5 = Requisition("09/05/2024", "FN30", "Ali Khan")
+    r5.add_requisition([("Chair", 500)])
+    r5.approve_requisition()
+
+    print("=== Before manager response to r5 ===")
+    Requisition.display_requisitions()
+    Requisition.requisition_statistics()
+
+    # Manager approves r5
+    r5.respond_to_requisition("Approved")
+
+    print("\n=== After manager response to r5 ===")
+    Requisition.display_requisitions()
+    Requisition.requisition_statistics()
